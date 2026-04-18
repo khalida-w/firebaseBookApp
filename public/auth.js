@@ -1,44 +1,32 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
-import { 
-  getAuth, 
-  signOut, 
-  signInAnonymously, 
-  setPersistence, 
-  browserLocalPersistence, 
-  onAuthStateChanged 
-} from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+import { getAuth, signInAnonymously, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import firebaseConfig from "./firebaseConfig.js";
-
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 
 const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
 
-const auth = getAuth();
-
-function setAuthListeners(onLogin, onLogout){
-  onAuthStateChanged(auth, user => {
-    if (user) {
-      onLogin();
-    } else {
-      onLogout();
+export async function signIn() {
+    try {
+        await signInAnonymously(auth);
+    } catch (error) {
+        console.error(error.message);
     }
-  });
 }
 
-async function signIn(){
-  try{
-    await setPersistence(auth, browserLocalPersistence);
-    const user = await signInAnonymously(auth);
-  }catch(e){
-    console.error(e);
-  }
+export async function logout() {
+    try {
+        await signOut(auth);
+    } catch (error) {
+        console.error(error.message);
+    }
 }
 
-async function logout() {
-  try {
-    await signOut(auth);
-  } catch (error) {
-    console.error('Error signing out', error);
-  }
+export function setAuthListeners(onLogin, onLogout) {
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            onLogin(user);
+        } else {
+            onLogout();
+        }
+    });
 }
-
-export {auth, setAuthListeners, signIn, logout};

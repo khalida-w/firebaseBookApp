@@ -1,204 +1,141 @@
-
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-
-     <!--Import Google Icon Font-->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <!-- Compiled and minified CSS -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amiibo Lab Exam</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
-    <!--Let browser know website is optimized for mobile-->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Home</title>
-
     <style>
-      *{
-        box-sizing: border-box;  
-      }
-
-      html{
-        height: 100vh;
-        width: 100vw;
-        margin:0;
-        padding:0;
-      }
-
-      body{
-        margin:0;
-        padding:0;
-        height: 100%;
-        width: 100%;
-      }
-
+        body { background: #f5f5f5; }
+        .amiibo-card { padding: 10px; text-align: center; border: 1px solid #ddd; border-radius: 8px; background: white; }
+        .amiibo-card img { width: 100px; }
+        #amiibo-container { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin-top: 20px; }
+        .review-section { margin-top: 40px; padding: 20px; background: white; border-radius: 8px; }
     </style>
+</head>
+<body>
 
-  </head>
-  <body>
-    <nav class="purple">
-      <div class="nav-wrapper" style="padding-left: 20px; padding-right: 20px;">
-        <a href="#" class="brand-logo">Home <span id="user"></span></a>
-        <ul class="right">
-          <li>
-            <button class="btn waves-effect waves-light" id="logoutBtn" style="display: none">
-              Logout
-            </button>
-          </li>
-          <li>
-            <button class="btn waves-effect waves-light" id="loginBtn" >
-              Login
-            </button>
-          </li>
-        </ul>
-       
-      </div>
+    <nav class="red darken-2">
+        <div class="nav-wrapper container">
+            <a href="#" class="brand-logo">AmiiboDB</a>
+            <ul id="nav-mobile" class="right">
+                <li><span id="user"></span></li>
+                <li><button id="loginBtn" class="btn blue">Login</button></li>
+                <li><button id="logoutBtn" class="btn grey" style="display:none;">Logout</button></li>
+            </ul>
+        </div>
     </nav>
 
-    <div class="row">
-
-      
-      <section class="col s12 m4 push-m8">
-                
-          <div class="row">
-            <div class="col s10">
-              <form id="reviewForm">
-
-                <h1 style="font-size: 1.5em">Selected: <span id="selectedName"></span></h1>
-  
-                <input type="hidden" id="selectedBook" name="isbn" value="null">
-                <div class="input-field">
-                    <textarea id="text" name="text" class="materialize-textarea"></textarea>
-                    <label for="text">Textarea</label>
-                </div>
-  
-                <div class="row">
-                    <div class="input-field col s4 right">
-                    <button class="btn waves-effect waves-light purple" id="reviewBtn"  type="submit">
-                        Submit
-                    </button>
-                    </div>  
-                </div>
-              </form>
-            </div>
-          </div>
-
-          <div class="row hide-on-small-only" style="height: 40vh; overflow-y: scroll;">
-                <ul class="collection" id="reviews">
-                  
-                </ul>
-          </div>
-      
-      </section>
-
-      <section class="col s12 m8 pull-m4" style="overflow-y:scroll; height: 86vh; margin-top: 10px;">
-        <div class="row" id="books">
-           
+    <div class="container">
+        <div class="search-box" style="margin: 20px 0;">
+            <input type="text" id="character-input" placeholder="Search Amiibo (e.g. Zelda)">
+            <button id="search-btn" class="btn red">Search</button>
         </div>
-      </section>
 
+        <div id="amiibo-container"></div>
 
+        <div class="review-section">
+            <h5 id="selectedName">Select an Amiibo to Review</h5>
+            <ul id="reviewList" class="collection"></ul>
+
+            <form id="reviewForm">
+                <input type="hidden" id="selectedBook" name="isbn" value="">
+                <div class="input-field">
+                    <input type="text" name="text" id="reviewText" required>
+                    <label for="reviewText">Enter Review</label>
+                </div>
+                <button type="submit" class="btn red">Submit Review</button>
+            </form>
+        </div>
     </div>
 
-    <script type="module">
-      import { signIn, logout, auth, setAuthListeners } from './auth.js';
-      import { getBooks, getReviews, createReview, deleteReview } from './data.js';
-
-      let loginBtn = document.querySelector('#loginBtn');
-      let logoutBtn = document.querySelector('#logoutBtn');
-      let reviewForm = document.querySelector('#reviewForm');
-
-      function setLoggedInUI(){
-          M.toast({html: 'Logged In!'})
-          document.querySelector('#user').innerHTML = `Signed in Anonymously`;
-          document.querySelector('#loginBtn').style.display = 'none';
-          document.querySelector('#logoutBtn').style.display = 'inline-block';
-      }
-
-      function setLoggedOutUI(){
-          M.toast({html: 'Logged Out!'})
-          document.querySelector('#user').innerHTML = '';
-          document.querySelector('#loginBtn').style.display = 'inline-block';
-          document.querySelector('#logoutBtn').style.display = 'none';
-      }
-
-      //attatch listeners
-      logoutBtn.addEventListener('click', logout);
-      loginBtn.addEventListener('click', signIn);
-      setAuthListeners(setLoggedInUI, setLoggedOutUI);
-
-      function renderReviews(reviews){
-        let reviewsList = document.querySelector('#reviews');
-        let html = '';
-        for (let review of reviews){
-            html += `
-                <li class="collection-item">
-                    <p>Review: ${review.text}</p>
-                    <p>Reviewer: ${review.reviewer}</p>
-                </li>`;
-        }
-        reviewsList.innerHTML = html;
-      }
-
-      function selectBook(isbn, name){
-          document.querySelector('#selectedName').innerHTML = name;
-          let selectedBook = document.querySelector('#selectedBook');
-          selectedBook.value = isbn;
-          getReviews(isbn, renderReviews);
-      }
-
-      window.selectBook = selectBook;
-
-reviewForm.addEventListener('submit', submitReivew);
-
-async function submitReivew(event){
-    event.preventDefault();
-    let form = event.target;
-    let formData = new FormData(form);
-    const { text, isbn } = Object.fromEntries(formData);
-    if(isbn === 'null'){
-        alert('Please select a book to review');
-    }
-    else if(auth.currentUser === null){
-        alert('Please login to review');
-    }else{
-      await createReview(auth, isbn, text);
-      M.toast({html: 'Review created!'});
-      form.reset();
-      getReviews(isbn, renderReviews);
-    }
-}
-
-      function renderBooks(books)
-      {
-        let booksArea = document.querySelector('#books');
-        let html = '';
-        for (let book of books){
-            html += `
-                <div class="col offset-s1 s10 m6 l4">
-                    <div class="card purple lighten-5">
-                        <div>
-                            <img src="${book.image}"  style="max-width:100%">
-                        </div>
-                        <div class="card-content">
-                            <span class="card-title">${book.title}</span>
-                            <p>${book.author}</p>
-                            <p>${book.year}</p>
-                            <p>${book.publisher}</p>
-                        </div>
-                    <div class="card-action">
-                      <button class="btn waves-effect" onclick="selectBook('${book.isbn}', '${book.title}')">
-                        Review
-                      </button>
-                    </div>
-                    </div>
-                </div>`;
-        }
-        booksArea.innerHTML = html;
-      }
-
-      getBooks(renderBooks);
-      
-    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-    <script> M.AutoInit(); </script>
-  </body>
+
+    <script type="module">
+        import { signIn, logout, auth, setAuthListeners } from './auth.js';
+        import { getFirestore, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore();
+        const container = document.getElementById('amiibo-container');
+        const input = document.getElementById('character-input');
+        const searchBtn = document.getElementById('search-btn');
+
+        window.selectBook = async function(id, name) {
+            document.querySelector('#selectedName').innerHTML = "Reviews for: " + name;
+            document.querySelector('#selectedBook').value = id;
+            
+            const q = query(collection(db, "reviews"), where("isbn", "==", id));
+            const querySnapshot = await getDocs(q);
+            const list = document.querySelector('#reviewList');
+            list.innerHTML = '';
+            querySnapshot.forEach((doc) => {
+                const li = document.createElement('li');
+                li.className = 'collection-item';
+                li.textContent = doc.data().text;
+                list.appendChild(li);
+            });
+        };
+
+        async function fetchAmiibo(name) {
+            container.innerHTML = 'Loading...';
+            try {
+                const res = await fetch(`https://www.amiiboapi.com/api/amiibo/?name=${name}`);
+                const data = await res.json();
+                renderAmiibos(data.amiibo);
+            } catch (e) {
+                container.innerHTML = 'No results found.';
+            }
+        }
+
+        function renderAmiibos(list) {
+            container.innerHTML = '';
+            list.slice(0, 12).forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'amiibo-card';
+                div.innerHTML = `
+                    <img src="${item.image}">
+                    <h6>${item.name}</h6>
+                    <button class="btn-small" onclick="selectBook('${item.tail}', '${item.name}')">Reviews</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        document.querySelector('#reviewForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.querySelector('#selectedBook').value;
+            const text = document.querySelector('#reviewText').value;
+
+            if (!id) return alert('Select an Amiibo first');
+            if (!auth.currentUser) return alert('Login first');
+
+            await addDoc(collection(db, "reviews"), {
+                isbn: id,
+                text: text,
+                uid: auth.currentUser.uid
+            });
+
+            M.toast({html: 'Review Saved!'});
+            document.querySelector('#reviewText').value = '';
+            window.selectBook(id, document.querySelector('#selectedName').innerHTML.replace("Reviews for: ", ""));
+        });
+
+        searchBtn.addEventListener('click', () => fetchAmiibo(input.value));
+        document.getElementById('loginBtn').addEventListener('click', signIn);
+        document.getElementById('logoutBtn').addEventListener('click', logout);
+
+        setAuthListeners(
+            (user) => {
+                document.getElementById('user').innerText = "Logged In";
+                document.getElementById('loginBtn').style.display = 'none';
+                document.getElementById('logoutBtn').style.display = 'inline-block';
+            },
+            () => {
+                document.getElementById('user').innerText = "";
+                document.getElementById('loginBtn').style.display = 'inline-block';
+                document.getElementById('logoutBtn').style.display = 'none';
+            }
+        );
+    </script>
+</body>
 </html>
